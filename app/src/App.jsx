@@ -1,21 +1,40 @@
-import { useState } from 'react'
-import { connectWallet, callContractFunction } from "./blockchainUtils";
+import { useEffect, useState } from 'react'
+import { enterLottery, getMyBalance, getLotteryBalance, getWinner, getSigner } from "./blockchainUtils";
 
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
   const [account, setAccount] = useState(null);
+  const [balance, setBalance] = useState(0);
+  const [lotteryBalance, setLotteryBalance] = useState(0);
+
+  // run code on startup
+  useEffect(() => {
+    showBalance();
+  }, []);
 
   const handleConnect = async () => {
-    const signer = await connectWallet();
+    const signer = await getSigner();
     if (signer) {
       const address = await signer.getAddress();
       setAccount(address);
     }
   };
+
+  const showBalance = async () => {
+    setBalance(await getMyBalance());
+    setLotteryBalance(await getLotteryBalance());
+  }
+  const handleEnter = async () => {
+    await enterLottery();
+    showBalance();
+  }
+  const handleWinner = async () => {
+    await getWinner();
+    showBalance();
+  }
 
   return (
     <>
@@ -27,25 +46,20 @@ function App() {
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
       </div>
-      <h1>Vite + React</h1>
+      <h1>Welcome to Lottery</h1>
+      <p>Balance: {lotteryBalance} ETH</p>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+        <button onClick={handleConnect}>
+          {account ? `Connected: ${account}` : "Connect MetaMask"}
         </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+        <button onClick={handleEnter}>
+          Enter Lottery
+        </button>
+        <button onClick={handleWinner} style={{ backgroundColor: "lightgreen" }}>
+          Get Winner
+        </button>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-
-      <button onClick={handleConnect}>
-        {account ? `Connected: ${account}` : "Connect MetaMask"}
-      </button>
-      <button onClick={callContractFunction} disabled={!account}>
-        Call Contract
-      </button>
+      <p>Account Balance: {Math.round(balance)} ETH</p>
     </>
   )
 }

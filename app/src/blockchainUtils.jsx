@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 
-const contractAddress = "0xa873271e7f0e84f6Def7EeC0d701b37C2E6E4Aea"; // Replace with your contract address
+const contractAddress = "0x954cE5c579Eb27100b68065443F7DcA289bf6b1a"; // Replace with your contract address
 const abi = [
     {
         "inputs": [],
@@ -86,48 +86,79 @@ const abi = [
     {
         "inputs": [],
         "name": "getWinner",
-        "outputs": [],
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
         "stateMutability": "nonpayable",
         "type": "function"
     }
 ];
 
-export const connectWallet = async () => {
+const getProvider = () => {
     if (!window.ethereum) {
         alert("Please install MetaMask!");
         return null;
     }
+    return new ethers.BrowserProvider(window.ethereum);
+};
 
+export const getSigner = async () => {
     try {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        return provider.getSigner();
+        return await getProvider()?.getSigner();
     } catch (error) {
         console.error("MetaMask connection error:", error);
         return null;
     }
 };
 
-export const getContract = (signer) => {
-    return new ethers.Contract(contractAddress, abi, signer);
+export const getContract = async () => {
+    const signer = await getSigner();
+    return signer ? new ethers.Contract(contractAddress, abi, signer) : null;
 };
 
-export const callContractFunction = async () => {
-    const signer = await connectWallet();
-    if (!signer) return;
-
-    const contract = getContract(signer);
-
+const withContract = async (action) => {
+    const contract = await getContract();
+    if (!contract) return;
     try {
-        const result = await contract.getBalance(); // Example for reading
-        console.log("Read result:", ethers.utils.formatEther(result));
-
-        const tx = await contract.join({
-            value: ethers.utils.parseEther("1.0"), // Send 1 ETH
-        });
-        await tx.wait();
-        console.log("Transaction completed!");
+        return await action(contract);
     } catch (error) {
         console.error("Contract interaction error:", error);
     }
 };
+
+export const enterLottery = async () => {
+    await withContract(async (contract) => {
+        const tx = await contract.join({ value: ethers.parseEther("1.0") });
+        await tx.wait();
+        console.log("Transaction completed!");
+    });
+};
+
+export const getLotteryBalance = async () => {
+    return withContract(async (contract) => {
+        const balance = await contract.getBalance();
+        return ethers.formatEther(balance);
+    });
+};
+
+export const getMyBalance = async () => {
+    const provider = getProvider();
+    const signer = await getSigner();
+    const balance = await provider.getBalance(signer.getAddress());
+    return ethers.formatEther(balance);
+};
+
+
+export const getWinner = async () => {
+    return withContract(async (contract) => {
+        const tx = await contract.getWinner();
+        tx.wait();
+        console.log(tx);
+
+    });
+};
+

@@ -17,7 +17,7 @@ contract Lottery {
     }
 
     function getBalance() public view returns (uint) {
-        require(manager == msg.sender, "You cannot show the balance!");
+        //require(manager == msg.sender, "You cannot show the balance!");
         return address(this).balance;
     }
 
@@ -34,12 +34,13 @@ contract Lottery {
             ) % members.length;
     }
 
-    function getWinner() public {
+    function getWinner() public returns (address) {
         require(manager == msg.sender, "You cannot roll the drum!");
 
         uint index = random();
         winner = members[index];
         winner.transfer(getBalance());
         members = new address payable[](0);
+        return winner;
     }
 }
