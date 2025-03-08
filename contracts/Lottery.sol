@@ -27,7 +27,7 @@ contract Lottery {
                 keccak256(
                     abi.encodePacked(
                         block.timestamp,
-                        block.difficulty, // Use block.difficulty in older versions
+                        block.prevrandao, // Use block.difficulty in older versions
                         msg.sender
                     )
                 )
